@@ -56,6 +56,7 @@ temp/
 *.mv
 *.trace
 *.trace.json
+*.lock
 
 # Local development
 .local/ 
