@@ -1,103 +1,56 @@
 # DAO GROW NFT Oluşturucu Platformu
 
 ## Genel Bakış
-DAO GROW, topraksız tarım (hidroponik/aeroponik) yetiştirme tekniklerini Web3 teknolojisi ile birleştiren yenilikçi bir platformdur. Platform, topraksız tarım uzmanlarının deneyimlerini NFT olarak tokenize ederek, bu değerli bilgilerin güvenli ve şeffaf bir şekilde paylaşılmasını sağlar.
 
-## Topraksız Tarım Sistemi
+DAO GROW, Sui Network üzerinde çalışmak üzere tasarlanmış, NFT tabanlı topraksız tarım tariflerini tokenize eden yenilikçi bir platformdur. Platform, hidroponik ve aeroponik yetiştirme tekniklerini NFT ile birleştirerek kullanıcıların deneyimlerini güvenli ve şeffaf şekilde paylaşmalarını sağlar.
 
-### Temel Özellikler
-- Hidroponik ve aeroponik yetiştirme teknikleri
-- NFT tabanlı tarif tokenizasyonu
-- Gerçek zamanlı sensör verileri entegrasyonu
-- Blockchain üzerinde doğrulanabilir başarı metrikleri
+## Akıllı Kontratlar
 
-### Tarif İçeriği
-Her topraksız tarım tarifi aşağıdaki temel parametreleri içermelidir:
+### 1. Treasury Modülü
 
-| Parametre | Açıklama | Önem Derecesi |
-|-----------|-----------|---------------|
-| EC Değeri | Besin çözeltisinin elektriksel iletkenliği | Kritik |
-| PH Değeri | Besin çözeltisinin asitlik/bazlık dengesi | Kritik |
-| Işıklandırma Değeri | LED veya doğal ışık yoğunluğu | Yüksek |
-| CO2 Değeri | Ortam CO2 konsantrasyonu | Orta |
-| O2 Değeri | Kök bölgesi çözünmüş oksijen seviyesi | Kritik |
-| Ortam Sıcaklığı | Yetiştirme ortamı sıcaklığı | Yüksek |
-| Besin Çözeltisi | Kullanılan besin karışımı oranları | Kritik |
-| Sulama Sıklığı | Damla sulama veya aeroponik püskürtme sıklığı | Yüksek |
+[`daogrow::treasury`](daogrow/sources/treasury.move) modülü, NFT mint işlemleri için uygulanacak ücreti ve kasanın sahibini yönetir.
 
-## Web3 Entegrasyonu
+- **Yapı:** `Treasury`
+- **Sabit Ücret:** `NFT_MINT_FEE`
+- **Fonksiyonlar:**
+  - [`get_nft_mint_cost`](daogrow/sources/treasury.move): Mint ücretini döner.
+  - [`get_owner`](daogrow/sources/treasury.move): Kasayı oluşturan cüzdan adresini döner.
 
-### 1. NFT Tabanlı Tarif Sistemi
-- Her başarılı topraksız tarım tarifi NFT olarak tokenize edilir
-- Tarif sahipleri, başarı metriklerini blockchain üzerinde doğrular
-- Akıllı kontratlar ile otomatik ödeme ve telif hakkı yönetimi
+### 2. DAO GROW Modülü
 
-### 2. Sensör Verileri ve IoT Entegrasyonu
-- Gerçek zamanlı sensör verilerinin blockchain'e kaydedilmesi
-- NFT sahiplerine özel sensör verisi erişimi
-- Otomatik veri doğrulama ve başarı metrikleri hesaplama
+[`daogrow::daogrow`](daogrow/sources/daogrow.move) modülü, NFT mint sürecini yönetir.
 
-### 3. Topluluk Yönetişimi
-- DAO yapısı ile topluluk kararları
-- Tarif geliştirme ve güncelleme oylamaları
-- Yeni özellik ve sistem önerileri
+- **Yapı:** `RecipeNFT` – NFT özelliklerini tanımlar.
+- **Fonksiyon:**
+  - [`mint_with_fee`](daogrow/sources/daogrow.move): Mint işlemi sırasında kullanıcının hesabından mint ücreti kesilerek, ücret treasury’ye transfer edilir ve kalan bakiye kontrol edilip işleme devam edilir. Ardından yeni NFT oluşturulup kullanıcının hesabına aktarılır.
 
-## Platform Sistemleri
+## İşleyiş Süreci
 
-### 1. Telif Hakkı Sistemi
-- Başarılı tariflerin ikinci el satışlarından telif hakkı
-- Otomatik ödeme mekanizması
-- Şeffaf gelir dağıtımı
+1. **Mint İşlemi Başlatılır:**  
+   Kullanıcı, NFT mint işlemi gerçekleştirmek istediğinde [`mint_with_fee`](daogrow/sources/daogrow.move) fonksiyonu devreye girer.
 
-### 2. Abonelik Sistemi
-#### Premium Üyelik
-- Detaylı sensör verisi analizi
-- Uzman destekli sorun giderme
-- Özel tarif geliştirme desteği
+2. **Mint Ücreti Kontrolü ve Transferi:**
 
-#### Standart Üyelik
-- Temel sensör verisi erişimi
-- Topluluk desteği
-- Genel tarif erişimi
+   - Kullanıcının mevcut bakiyesi, Treasury modülündeki mint ücreti ile karşılaştırılır.
+   - Hesaptan mint ücreti kesilerek, kesilen tutar treasury’de tanımlı adrese transfer edilir.
 
-### 3. Stake Sistemi
-#### Stake Mekanizması
-- NFT'leri stake ederek tarif geliştirme hakları
-- Topluluk yönetişiminde oy gücü
-- Özel içerik ve veri erişimi
+3. **NFT Oluşturulması:**
+   - Kullanıcının bakiyesi sıfırlanmazsa kalan miktar kontrol edilir ve gerekirse tekrar kullanıcıya transfer edilir.
+   - Yeni NFT, `RecipeNFT` yapısıyla oluşturulup kullanıcının hesabına aktarılır.
 
-#### Stake Süreleri ve Ödüller
-| Süre | Ödüller | Yönetişim Hakları |
-|------|---------|-------------------|
-| 30 Gün | Temel Veri Erişimi | Temel Oylama |
-| 60 Gün | Gelişmiş Analiz | Tarif Geliştirme |
-| 90 Gün | Premium Özellikler | DAO Yönetimi |
+## Proje Yapısı
 
-## Teknik Altyapı
+- **daogrow/sources/treasury.move:** Treasury modülü tanımlamaları ve fonksiyonları.
+- **daogrow/sources/daogrow.move:** NFT mint işlemi ve `RecipeNFT` yapısı.
+- Diğer modüller ve dosyalar, platformun ek işlevselliği için genişletilebilir.
 
-### Akıllı Kontratlar
-- Move dili ile geliştirilmiş kontratlar
-- Sensör verisi doğrulama sistemi
-- Otomatik ödeme ve dağıtım mekanizmaları
+## Kurulum ve Çalıştırma
 
-### IoT ve Sensör Entegrasyonu
-- Gerçek zamanlı veri toplama
-- Blockchain üzerinde veri doğrulama
-- Otomatik uyarı ve bildirim sistemi
+- **Gereksinimler:**  
+  Move derleyicisi, Sui SDK ve ilgili bağımlılıklar.
+- **Derleme:**  
+  İlgili Move ve Sui komutları kullanılarak proje derlenir ve test edilir.
 
-### Güvenlik Önlemleri
-- Çoklu imza doğrulama
-- Sensör verisi manipülasyon koruması
-- Acil durum müdahale sistemi
+## Lisans
 
-## Gelecek Geliştirmeler
-
-### Planlanan Özellikler
-1. Yapay zeka destekli tarif optimizasyonu
-2. Cross-chain sensör verisi entegrasyonu
-3. Topraksız tarım ekipmanları NFT marketplace'i
-
-### Ölçeklenebilirlik
-- Layer 2 çözümleri ile hızlı veri işleme
-- Batch işlem desteği
-- Optimizasyon mekanizmaları  
+Proje, ilgili lisans bilgilerini içeren [LICENSE](LICENSE) dosyası kapsamında
